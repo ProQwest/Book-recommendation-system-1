@@ -1,0 +1,211 @@
+#include <cassert>
+#include <cctype>
+#include <cstdio>
+#include <cstdlib>
+#include <cstring>
+#include <ctime>
+#include <algorithm>
+#include <bitset>
+#include <deque>
+#include <iostream>
+#include <iomanip>
+#include <limits>
+#include <list>
+#include <map>
+#include <queue>
+#include <set>
+#include <sstream>
+#include <stack>
+#include <utility>
+#include <vector>
+#include <fstream>
+using namespace std;
+
+
+typedef pair<int, int> PII;
+typedef pair<string, int> PII2;
+
+bool comp (PII x, PII y) {
+
+	return (x.second > y.second);
+}
+
+bool comp1 (PII2 x, PII2 y) {
+
+	return (x.second > y.second);
+}
+
+int main()
+{
+	ifstream infile;
+	map<int,map<string,int> > m;
+	map<int,int> mt,ma;
+	vector<string> v_book;
+	vector<int> v_user;
+	infile.open("book_rating.csv");
+	int c =0;
+	string str,book_id;
+	char ch;
+	int user_id,i,j;
+		clock_t start = clock();
+		vector<pair<int,int> > pa;
+		pair<int,int> pai;
+	while(getline(infile,str)) {
+
+	//	cout<<str<<endl;
+		stringstream ss;
+		ss<<str;
+		int rat = str[str.length()-6]-48;
+		ss>>ch>>user_id;
+	//	cout<<user_id<<" "<<rat<<endl;
+		int count = 0;
+		book_id="";
+		for(i=0;i<str.length();i++) {
+			if(str[i] == '"') {
+			count++;
+			if(count == 3)
+			break;
+			}
+		}
+		for(j=i+1;str[j]!='"';j++) {
+			book_id += str[j];
+		}
+
+
+
+		m[user_id][book_id] = rat;
+		//to store count of users
+		if(rat!=0) {
+			mt[user_id]++;
+		}
+
+
+	//	cout<<	m[user_id][book_id] <<endl;
+	//	cout<<"book_id  = "<<book_id<<endl;
+		c++;
+	/*	if(c==10)
+		break;*/
+	}
+		map<int,int>::iterator it;
+	for(it=mt.begin();it!=mt.end();it++) {
+		pai.first = (*it).first;
+			pai.second  = (*it).second;
+			//vector of pair to store users and count according to descending order of count
+			pa.push_back(pai);
+
+	}
+		infile.close();
+
+
+
+	infile.open("book-feature.csv");
+	c = 0;
+	str ="";
+	while(getline(infile,str)) {
+	//	cout<<str;
+		book_id = "";
+		for(i=1;str[i]!=';';i++){
+			book_id += str[i];
+		}
+
+		v_book.push_back(book_id);
+	//	cout<<book_id<<" "<<endl;
+		c++;
+	/*	if(c==10)
+		break;*/
+	}
+	infile.close();
+		ofstream max_users("max_10000.txt");
+	sort(pa.begin(),pa.end(),comp);
+	//finally just fetch first 10000 values from pa which will represent <userid,count_of_users> in pair
+	//cout<<"sorted list ";
+	map<string,int> book_count;
+	map<string,int>::iterator it3;
+	for(i=0;i<10000;i++) {
+		max_users<<pa[i].first<<" "<<pa[i].second<<endl;
+		for(it3=m[pa[i].first].begin();it3!=m[pa[i].first].end();it3++) {
+			book_count[(*it3).first]++;
+		}
+	}
+
+	vector<pair<string,int> > max_books_count; // It will store first 1000 values of book id in string after sorting
+	pair<string,int> po;
+	map<string,int> ::iterator it2;
+	for(it2=book_count.begin();it2!=book_count.end();it2++) {
+		po.first = (*it2).first;
+		po.second = (*it2).second;
+		max_books_count.push_back(po);
+	}
+	sort(max_books_count.begin(),max_books_count.end(),comp1);
+	ofstream max_books("max_1000.txt");
+	for(i=0;i<1000;i++) {
+		max_books<<max_books_count[i].first<<endl;
+	}
+/*	for(j=0;j<50;j++) {
+		cout<<max_books_count[j].first<<" "<<max_books_count[j].second<<endl;
+	}*/
+
+	infile.open("user-feature.csv");
+	c = 0;
+	str ="";
+	while(getline(infile,str)) {
+	//	cout<<str<<endl;
+		int sum = 0;
+		for(i=1;str[i]!=';';i++){
+			sum=sum*10 + (str[i]-48);
+		}
+	//	cout<<"sum = "<<sum<<endl;
+		v_user.push_back(sum);
+		c++;
+	/*	if(c==10)
+		break;*/
+	}
+	//pa map
+	int count = 0;
+	ofstream f("user_book_matrix_501.txt");
+	for(i=500;i<1500;i++) {
+		for(j=0;j<1000;j++) {
+			if(m[pa[i].first][max_books_count[j].first])
+			f<<m[pa[i].first][max_books_count[j].first]<<",";
+			else  {
+				count++;
+			//	m[v_user[i]][v_book[j]] = 0;
+				f<<m[pa[i].first][max_books_count[j].first]<<",";
+			}
+		}
+		f<<endl;
+	}
+	cout<<"count = "<<count<<endl;
+	cout<<"perc = "<<((double)count/(double)10000000)*100<<endl;
+	infile.close();
+
+
+
+
+
+/*	for(i=0;i<100000;i++) {
+		st = "";
+		st1 = i+48;
+		if(i==10)
+		break;
+		for(j=0;j<100000;j++) {
+			v.push_back(j);
+			//m[0] = v;
+		}
+		st = st + st1;
+		m[st] = v;
+		v.clear();
+	}*/
+	clock_t end = clock();
+	printf("time = %lf",((float)(end-start)/CLOCKS_PER_SEC));
+	/*for(i=0;i<1000;i++) {
+		st = st + i + 48;
+		v = m[st];
+		st ="";
+		for(j=0;j<v.size();j++) {
+			cout<<v[j];
+		}
+		v.clear();
+	}*/
+	return 0;
+}
